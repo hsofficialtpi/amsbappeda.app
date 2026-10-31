@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SIPADA - Bappeda Kepri</title>
+  <link rel="icon" href="https://i.ibb.co.com/jPwNr4Q6/Bappeda-logo-ed-Copy1.png" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #eee;
+      overflow: hidden; /* Mencegah scroll ganda */
+    }
+
+    .iframe-container {
+      width: 100%;
+      height: 100dvh; /* Menggunakan dvh agar pas di mobile browser */
+      overflow: hidden;
+    }
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="iframe-container">
+    <iframe
+      id="app"
+      src="https://script.google.com/macros/s/AKfycbzen5DXC8T0Vn82aYBInHi-ke7Qj_63Q4r49ZMU3pl-A3HeD2jZCMFqOP3tvYwnp1VEKA/exec"
+      scrolling="yes"
+      allowfullscreen="true"
+      webkitallowfullscreen="true"
+      mozallowfullscreen="true"
+      allow="fullscreen; camera; microphone; display-capture; geolocation;">
+    </iframe>
+  </div>
+  <script>
+    // Jembatan routing hash <-> aplikasi GAS (di dalam iframe).
+    // URL contoh: https://username.github.io/repo/#/laporan
+    (function () {
+      var appWin = null, appOrigin = null;
+
+      // Hanya terima pesan dari domain tempat aplikasi GAS dijalankan
+      function asalSah(origin) {
+        try { return /\.googleusercontent\.com$/.test(new URL(origin).hostname); }
+        catch (e) { return false; }
+      }
+
+      function kirimKeApp() {
+        if (appWin) appWin.postMessage({ type: 'route', hash: location.hash }, appOrigin);
+      }
+
+      window.addEventListener('message', function (e) {
+        if (!asalSah(e.origin)) return;
+        var d = e.data || {};
+        appWin = e.source;
+        appOrigin = e.origin;
+
+        if (d.type === 'ready') { kirimKeApp(); return; }   // aplikasi siap -> kirim hash saat ini
+
+        if (d.type === 'route' && typeof d.hash === 'string') {
+          if (d.hash === '') {                               // logout -> bersihkan hash
+            if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+            return;
+          }
+          // hanya format #/namahalaman (huruf kecil) yang diterima
+          if (/^#\/[a-z]+$/.test(d.hash) && d.hash !== location.hash) location.hash = d.hash;
+        }
+      });
+
+      // Tombol back/forward browser atau hash diubah manual
+      window.addEventListener('hashchange', kirimKeApp);
+    })();
+  </script>
+</body>
+</html>
